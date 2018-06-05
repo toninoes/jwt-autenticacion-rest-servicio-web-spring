@@ -1,2 +1,2 @@
 # JwtEjemplo
-Aplicación Java para implementar la autenticación con JSON Web Tokens.
+Aplicación Java para implementar servicio REST (de prueba) con autenticación basada en JSON Web Tokens.
