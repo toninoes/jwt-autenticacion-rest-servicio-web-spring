@@ -1,5 +1,6 @@
 package rha.jwt.model.security;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -27,38 +28,38 @@ public class User {
 	@GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @Column(name = "USERNAME", length = 50, unique = true)
-    @NotNull
-    @Size(min = 4, max = 50)
+    @Column(name = "USERNAME", length = 100, unique = true)
+    @NotNull(message = "Introduzca un username")
+    @Size(min = 4, max = 50, message = "el tamaño tiene que estar entre 4 y 50")
     private String username;
 
     @Column(name = "PASSWORD", length = 100)
-    @NotNull
-    @Size(min = 4, max = 100)
+    @NotNull(message = "Introduzca una contraseña")
+    @Size(min = 4, max = 100, message = "el tamaño tiene que estar entre 4 y 100")
     private String password;
 
     @Column(name = "FIRSTNAME", length = 50)
-    @NotNull
-    @Size(min = 4, max = 50)
+    @NotNull(message = "Introduzca un nombre")
+    @Size(min = 4, max = 50, message = "el tamaño tiene que estar entre 4 y 50")
     private String firstname;
 
-    @Column(name = "LASTNAME", length = 50)
-    @NotNull
-    @Size(min = 4, max = 50)
+    @Column(name = "LASTNAME", length = 100)
+    @NotNull(message = "Introduzca los apellidos")
+    @Size(min = 4, max = 100, message = "el tamaño tiene que estar entre 4 y 100")
     private String lastname;
 
     @Column(name = "EMAIL", length = 50)
-    @NotNull
-    @Size(min = 4, max = 50)
+    @NotNull(message = "Introduzca un email")
+    @Size(min = 4, max = 50, message = "el tamaño tiene que estar entre 4 y 50")
     private String email;
 
     @Column(name = "ENABLED")
-    @NotNull
+    @NotNull(message = "Diga si está habilitado o no")
     private Boolean enabled;
 
     @Column(name = "LASTPASSWORDRESETDATE")
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
+    @NotNull(message = "Introduzca una fecha")
     private Date lastPasswordResetDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -68,8 +69,8 @@ public class User {
             inverseJoinColumns = {@JoinColumn(name = "AUTHORITY_ID", referencedColumnName = "ID")})
     private List<Authority> authorities;
     
+    private ArrayList<Boolean> permisos = new ArrayList <>(3);
     
-
     public User() {
 		super();
 	}
@@ -87,6 +88,24 @@ public class User {
 		this.enabled = enabled;
 		this.lastPasswordResetDate = lastPasswordResetDate;
 		this.authorities = authorities;
+	}
+	
+	
+
+	public User(@NotNull @Size(min = 4, max = 50) String username, @NotNull @Size(min = 4, max = 100) String password,
+			@NotNull @Size(min = 4, max = 50) String firstname, @NotNull @Size(min = 4, max = 50) String lastname,
+			@NotNull @Size(min = 4, max = 50) String email, @NotNull Boolean enabled,
+			@NotNull Date lastPasswordResetDate, List<Authority> authorities, ArrayList<Boolean> permisos) {
+		super();
+		this.username = username;
+		this.password = password;
+		this.firstname = firstname;
+		this.lastname = lastname;
+		this.email = email;
+		this.enabled = enabled;
+		this.lastPasswordResetDate = lastPasswordResetDate;
+		this.authorities = authorities;
+		this.permisos = permisos;
 	}
 
 	public Long getId() {
@@ -160,4 +179,21 @@ public class User {
     public void setLastPasswordResetDate(Date lastPasswordResetDate) {
         this.lastPasswordResetDate = lastPasswordResetDate;
     }
+
+	@Override
+	public String toString() {
+		return "User [id=" + id + ", username=" + username + ", password=" + password + ", firstname=" + firstname
+				+ ", lastname=" + lastname + ", email=" + email + ", enabled=" + enabled + ", lastPasswordResetDate="
+				+ lastPasswordResetDate + ", authorities=" + authorities + "]";
+	}
+
+	public ArrayList<Boolean> getPermisos() {
+		return permisos;
+	}
+
+	public void setPermisos(ArrayList<Boolean> permisos) {
+		this.permisos = permisos;
+	}
+    
+    
 }

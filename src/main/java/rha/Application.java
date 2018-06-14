@@ -22,9 +22,10 @@ import rha.jwt.security.repository.UserRepository;
 
 @SpringBootApplication
 public class Application extends SpringBootServletInitializer {
-	
+
 	@Autowired 
 	private AuthorityRepository authRep;
+	
 	
 	@Autowired
 	private PasswordEncoder pass;
@@ -33,9 +34,11 @@ public class Application extends SpringBootServletInitializer {
 		SpringApplication.run(Application.class, args);
 	}
 	
+	
 	@Bean
     CommandLineRunner init(UserRepository userRepository) {
         return (args) -> {
+        	
         	if(userRepository.findAll().isEmpty()) {
         		Authority rolAdmin = new Authority(AuthorityName.ROLE_ADMIN);
         		Authority rolSanitario = new Authority(AuthorityName.ROLE_SANITARIO);
