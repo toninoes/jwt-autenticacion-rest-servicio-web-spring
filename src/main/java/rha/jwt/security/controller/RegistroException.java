@@ -9,4 +9,8 @@ public class RegistroException extends RuntimeException {
 	public RegistroException(String message, Throwable cause) {
         super(message, cause);
     }
+	
+	public RegistroException(String message) {
+        super(message);
+    }
 }

@@ -14,14 +14,14 @@ import rha.util.Mail;
 @RequestMapping("/api/cosas")
 public class CosaController {
 	
-	private static Logger log = LoggerFactory.getLogger(CosaController.class);
+	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
 	@Autowired
     private EmailService emailService;
 	
 	@GetMapping
 	public String findAll() {
-		log.info("Enviando Correo de Prueba");
+		logger.info("Enviando Correo de Prueba");
 
         Mail mail = new Mail();
         mail.setDe("toninoes.dev@gmail.com");
@@ -29,7 +29,7 @@ public class CosaController {
         mail.setAsunto("Correo de prueba");
         mail.setContenido("Hola");
 
-        emailService.sendSimpleMessage(mail);
+        emailService.enviarEmailPersonalizado(mail);
         
 		return "Hola, Ha funcionado!!!";
 	}

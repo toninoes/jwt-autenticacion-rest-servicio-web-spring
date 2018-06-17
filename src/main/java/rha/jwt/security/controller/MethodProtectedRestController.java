@@ -1,21 +1,25 @@
 package rha.jwt.security.controller;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
 import javax.validation.Valid;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import rha.exception.CampoUnicoException;
 import rha.jwt.model.security.ActivacionUsuario;
 import rha.jwt.model.security.Authority;
 import rha.jwt.model.security.AuthorityName;
@@ -25,10 +29,12 @@ import rha.jwt.security.JwtUserFactory;
 import rha.jwt.security.repository.ActivacionUsuarioRepository;
 import rha.jwt.security.repository.AuthorityRepository;
 import rha.jwt.security.repository.UserRepository;
+import rha.service.EmailService;
 
 @RestController
-@RequestMapping("admin")
 public class MethodProtectedRestController {
+	
+	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
 	@Autowired 
 	private AuthorityRepository authRep;
@@ -42,80 +48,36 @@ public class MethodProtectedRestController {
 	@Autowired
 	private PasswordEncoder pass;
 	
-	@GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getProtectedGreeting() {
-        return ResponseEntity.ok("Greetings from admin protected method!");
-    }
-    
-	@GetMapping("sanitario")
-    @PreAuthorize("hasRole('SANITARIO')")
-    public ResponseEntity<JwtUser> holaKillo() {
-		List<Authority> roles = new ArrayList<Authority>();
-		roles.add(authRep.findByName(AuthorityName.ROLE_PACIENTE));
-		User u = new User("antonisfddskko", "password", "Antonio", "Ruiz", "aruissss@xxx.es", true, new Date(), roles);
-		usrRep.save(u);
-		
-        return ResponseEntity.ok(JwtUserFactory.create(u));
-    }
-	
-	@PostMapping("registroAdmin")
-	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<JwtUser> registroAdmin(@Valid @RequestBody User user) {		
+	@Autowired
+    private EmailService emailService;
+    	
+	@PostMapping("registro")
+	@PreAuthorize("hasRole('ADMIN') or hasRole('SANITARIO')")
+	public ResponseEntity<JwtUser> registro(@Valid @RequestBody User user) throws Exception {	
 		try {
-			return registro(user);
+			return registrar(user);
+		} catch (CampoUnicoException e) {
+			throw new CampoUnicoException(e.getNombreRecurso(), e.getNombreCampo() , e.getValorCampo());
+		} catch (RegistroException e) {
+			throw new RegistroException(e.getMessage());
 		} catch (Exception e) {
-			throw new RegistroException("Error al registrar el usuario.", e);
+			throw new Exception(e.getMessage());
 		}		
 	}
 	
-	@PostMapping("registroSanitario")
-	@PreAuthorize("hasRole('SANITARIO')")
-	public ResponseEntity<JwtUser> registroSanitario(@Valid @RequestBody User user) {		
-		try {
-			if(puedeRegistrar(user.getAuthorities())) {
-				return registro(user);
-			} else {
-				Exception e = new Exception("Usted sólo puede registrar pacientes.");
-				throw new RegistroException("Error al registrar el usuario.", e);
-			}
-		} catch (Exception e) {
-			throw new RegistroException("Error al registrar el usuario.", e);
-		}
-	}
-	
-	/**
-	 * Los sanitarios sólo pueden registrar a pacientes.
-	 * 
-	 * @param authorities
-	 * @return
-	 */
-	private boolean puedeRegistrar(List<Authority> authorities) {
-		return (authorities.size() == 1 && 
-				authorities.get(0).getName() == AuthorityName.ROLE_PACIENTE);
-	}
-
-	private ResponseEntity<JwtUser> registro(User user) {
+	private ResponseEntity<JwtUser> registrar(User user) throws Exception {	
+		// no se puede registrar a un usuario sin roles
+		if(estaRegistrandoUserSinRoles(user.getPermisos()))
+			throw new RegistroException("Debe asociar al menos un rol al nuevo usuario.");
+			
+		// los sanitarios (noAdmin) sólo pueden registrar pacientes.
+		if(esSanitarioNoEsAdmin() && !estaRegistrandoSoloPaciente(user.getPermisos()))
+			throw new RegistroException("Usted sólo puede registrar pacientes.");
 		
-		/*Authority rolAdmin = new Authority(AuthorityName.ROLE_ADMIN);
-		Authority rolSanitario = new Authority(AuthorityName.ROLE_SANITARIO);
-		Authority rolPaciente = new Authority(AuthorityName.ROLE_PACIENTE);
+		// control unicidad de email (y username...)
+		if(usrRep.findByEmail(user.getEmail()).isPresent())
+			throw new CampoUnicoException("Usuario", "email", user.getEmail());
 		
-		authRep.save(rolAdmin);
-		authRep.save(rolSanitario);
-		authRep.save(rolPaciente);
-		
-		List<Authority> roles = new ArrayList<Authority>();
-		
-		roles.add(rolPaciente);
-		User paciente = new User("paciente2", pass.encode("paciente2"), "Paciente2", "Paciente2", 
-				"paciente2@user.es", true, new Date(), roles);
-		usrRep.save(paciente);
-		ActivacionUsuario actU = new ActivacionUsuario(paciente);
-		actUsrRep.save(actU);
-
-		
-		return ResponseEntity.ok(JwtUserFactory.create(paciente));*/
 		Authority rolAdmin = authRep.findByName(AuthorityName.ROLE_ADMIN);
 		Authority rolSanitario = authRep.findByName(AuthorityName.ROLE_SANITARIO);
 		Authority rolPaciente = authRep.findByName(AuthorityName.ROLE_PACIENTE);
@@ -129,19 +91,77 @@ public class MethodProtectedRestController {
 		if (user.getPermisos().get(2))
 			roles.add(rolPaciente);
 		
-		
-		User u = new User(user.getUsername(), pass.encode(user.getEmail()),
+		User usuario = new User(user.getUsername(), pass.encode(user.getEmail()),
 				user.getFirstname(), user.getLastname(), user.getEmail(),
 				false, new Date(), roles);
-		usrRep.save(u);
 		
-		ActivacionUsuario actU = new ActivacionUsuario(u);
-		actUsrRep.save(actU);
+		usrRep.save(usuario);
 		
-		return ResponseEntity.ok(JwtUserFactory.create(u));
+		ActivacionUsuario activacionUsuario = new ActivacionUsuario(usuario);
+		actUsrRep.save(activacionUsuario);
 		
+		// Enviar aqui el mail de activacion.
+		logger.info("Enviando correo de activación a '{}'", usuario.getEmail());
+		emailService.enviarCorreoActivacion(activacionUsuario);
 		
+		return ResponseEntity.ok(JwtUserFactory.create(usuario));
 	}
+	
+
+	/**
+	 * Comprueba que sólo se está intentando registrar a un paciente.
+	 * 
+	 * @param permisos
+	 * @return boolean
+	 */
+	private boolean estaRegistrandoSoloPaciente(ArrayList<Boolean> permisos) {		
+		return (permisos.get(0) == false &&
+				permisos.get(1) == false &&
+				permisos.get(2) == true);
+	}
+	
+	/**
+	 * Comprueba que si está registrando a un usuario sin roles asociados.
+	 * 
+	 * @param permisos
+	 * @return boolean
+	 */
+	private boolean estaRegistrandoUserSinRoles(ArrayList<Boolean> permisos) {		
+		return (permisos.get(0) == false &&
+				permisos.get(1) == false &&
+				permisos.get(2) == false);
+	}
+	
+	/**
+	 * Comprueba si un sanitario es o no es administrador
+	 * 
+	 * @return boolean
+	 */
+	private boolean esSanitarioNoEsAdmin() {
+		Collection<? extends GrantedAuthority> authorities = SecurityContextHolder.getContext()
+				.getAuthentication().getAuthorities();
+		
+		String username = SecurityContextHolder.getContext().getAuthentication().getName(); 
+		
+		logger.info("Roles de '{}': '{}'", username, authorities);
+		
+		boolean esAdmin = false;
+		boolean esSanitario = false;
+		
+		for(GrantedAuthority a: authorities) {
+			if(a.getAuthority().equals(AuthorityName.ROLE_ADMIN.toString()))
+				esAdmin = true;
+			if(a.getAuthority().equals(AuthorityName.ROLE_SANITARIO.toString()))
+				esSanitario = true;
+		}
+		
+		logger.info("'{}'. esAdmin: '{}'. esSanitario: '{}'", username, esAdmin, esSanitario);
+		
+		return (esSanitario && !esAdmin);
+	}
+	
+	
+	
 	
 	
 	

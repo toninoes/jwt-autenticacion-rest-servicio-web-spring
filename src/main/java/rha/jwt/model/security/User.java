@@ -30,7 +30,7 @@ public class User {
 
     @Column(name = "USERNAME", length = 100, unique = true)
     @NotNull(message = "Introduzca un username")
-    @Size(min = 4, max = 50, message = "el tamaño tiene que estar entre 4 y 50")
+    @Size(min = 4, max = 100, message = "el tamaño tiene que estar entre 4 y 100")
     private String username;
 
     @Column(name = "PASSWORD", length = 100)
@@ -40,17 +40,17 @@ public class User {
 
     @Column(name = "FIRSTNAME", length = 50)
     @NotNull(message = "Introduzca un nombre")
-    @Size(min = 4, max = 50, message = "el tamaño tiene que estar entre 4 y 50")
+    @Size(min = 3, max = 50, message = "el tamaño tiene que estar entre 3 y 50")
     private String firstname;
 
     @Column(name = "LASTNAME", length = 100)
     @NotNull(message = "Introduzca los apellidos")
-    @Size(min = 4, max = 100, message = "el tamaño tiene que estar entre 4 y 100")
+    @Size(min = 3, max = 100, message = "el tamaño tiene que estar entre 3 y 100")
     private String lastname;
 
-    @Column(name = "EMAIL", length = 50)
+    @Column(name = "EMAIL", length = 100, unique = true)
     @NotNull(message = "Introduzca un email")
-    @Size(min = 4, max = 50, message = "el tamaño tiene que estar entre 4 y 50")
+    @Size(min = 4, max = 100, message = "el tamaño tiene que estar entre 4 y 100")
     private String email;
 
     @Column(name = "ENABLED")

@@ -23,5 +23,20 @@
     "name": "jwt.route.authentication.refresh",
     "type": "java.lang.String",
     "description": "A description for 'jwt.route.authentication.refresh'"
+  },
+  {
+    "name": "protocolo",
+    "type": "java.lang.String",
+    "description": "A description for 'protocolo'"
+  },
+  {
+    "name": "dominio",
+    "type": "java.lang.String",
+    "description": "A description for 'dominio'"
+  },
+  {
+    "name": "puerto",
+    "type": "java.lang.String",
+    "description": "A description for 'puerto'"
   }
 ]}

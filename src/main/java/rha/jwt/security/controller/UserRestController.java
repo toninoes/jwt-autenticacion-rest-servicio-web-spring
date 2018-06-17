@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import rha.jwt.security.JwtTokenUtil;
@@ -25,12 +26,16 @@ public class UserRestController {
     @Qualifier("jwtUserDetailsService")
     private UserDetailsService userDetailsService;
 
-    //@RequestMapping(value = "user", method = RequestMethod.GET)
     @GetMapping("user")
     public JwtUser getAuthenticatedUser(HttpServletRequest request) {
         String token = request.getHeader(tokenHeader).substring(7);
         String username = jwtTokenUtil.getUsernameFromToken(token);
         JwtUser user = (JwtUser) userDetailsService.loadUserByUsername(username);
         return user;
-    }    
+    }   
+    
+    @GetMapping("activacion/{activacionId}")
+    public String activacionUsuario(@PathVariable String activacionId) {
+    	return "Hola, tu token es " + activacionId;
+    }
 }
