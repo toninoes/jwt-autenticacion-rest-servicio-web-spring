@@ -18,8 +18,6 @@ public class Cosa  {
 	@NotBlank
 	private String descripcion;
 	
-	
-
 	public Cosa() {
 		super();
 	}
