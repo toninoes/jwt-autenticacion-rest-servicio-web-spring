@@ -147,6 +147,10 @@ public class User {
     public void setLastname(String lastname) {
         this.lastname = lastname;
     }
+    
+    public String getFullName() {
+    	return firstname + " " + lastname;
+    }
 
     public String getEmail() {
         return email;

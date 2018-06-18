@@ -6,4 +6,5 @@ import rha.jwt.model.security.ActivacionUsuario;
 
 public interface ActivacionUsuarioRepository extends JpaRepository<ActivacionUsuario, Long> {
 
+	ActivacionUsuario findByTokenActivacion(String tokenActivacion);
 }

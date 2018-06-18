@@ -51,19 +51,19 @@ public class Application extends SpringBootServletInitializer {
         		List<Authority> roles = new ArrayList<Authority>();
         		
         		roles.add(rolPaciente);
-        		User paciente = new User("paciente", pass.encode("paciente"), "Paciente", "Paciente", 
+        		User paciente = new User("paciente@user.es", pass.encode("paciente"), "Paciente", "Paciente", 
         				"paciente@user.es", true, new Date(), roles);
         		userRepository.save(paciente);
         		JwtUserFactory.create(paciente);
         		
         		roles.add(rolSanitario);
-        		User sanitario = new User("sanitario", pass.encode("sanitario"), "Sanitario", "Sanitario", 
+        		User sanitario = new User("sanitario@user.es", pass.encode("sanitario"), "Sanitario", "Sanitario", 
         				"sanitario@user.es", true, new Date(), roles);
         		userRepository.save(sanitario);
         		JwtUserFactory.create(sanitario);
         		
         		roles.add(rolAdmin);
-        		User admin = new User("admin", pass.encode("admin"), "Admin", "Admin", 
+        		User admin = new User("admin@user.es", pass.encode("admin"), "Admin", "Admin", 
         				"admin@user.es", true, new Date(), roles);
         		userRepository.save(admin);
         		JwtUserFactory.create(admin);     		
